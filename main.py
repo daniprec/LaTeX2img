@@ -4,11 +4,6 @@ from typing import List
 import matplotlib
 import matplotlib.pyplot as plt
 
-# Runtime Configuration Parameters
-matplotlib.rc("text", usetex=True)
-matplotlib.rc("font", family="cmu-serif")
-matplotlib.rc("text.latex", preamble=r"\usepackage{amsmath}")
-
 def latex2image(
     latex_expression: str,
     image_name: str,
@@ -46,6 +41,16 @@ def latex2image(
         latex_expression = latex_expression.lstrip()
 
     fig = plt.figure(figsize=image_size_in, dpi=dpi)
+    # Runtime Configuration Parameters
+    plt.rc("text", usetex=True)
+    plt.rc("font", family="cmu-serif")
+    w = str(image_size_in[0] * 0.9)
+    preamble = r"""
+        \usepackage{amsmath}
+        \setlength\parindent{0pt}
+        \setlength\textwidth{$in}
+        """.replace("$", w)
+    plt.rc("text.latex", preamble=preamble)
 
     try:
         text = fig.text(
