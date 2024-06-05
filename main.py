@@ -1,7 +1,6 @@
 import os
 from typing import List
 
-import matplotlib
 import matplotlib.pyplot as plt
 
 def latex2image(
