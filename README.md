@@ -27,7 +27,7 @@ This repository reads LaTeX multiple-choice questions and generates an image for
 
 ## Running the Script
 
-You can run the script in the command line through Python:
+You can run the script in the command line using Python:
 
 ```python
 python tex2imgs.py -file <path-to-your-tex-file>
