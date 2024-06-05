@@ -6,8 +6,8 @@ import matplotlib.pyplot as plt
 
 # Runtime Configuration Parameters
 matplotlib.rc("text", usetex=True)
-matplotlib.rc("font", **{"family": "sans-serif"})
-
+matplotlib.rc("font", **{"family": "cmu-serif"})
+matplotlib.rc("text.latex", preamble=r"\usepackage{amsmath}")
 
 def latex2image(
     latex_expression: str,
@@ -58,9 +58,6 @@ def latex2image(
     )
     renderer = fig.canvas.get_renderer()
     bbox = text.get_window_extent(renderer=renderer)
-    # Adjust ylim
-    print("\n", text, "\n", bbox.height)
-    # Resize figure
     fig.set_size_inches(image_size_in[0], fontsize * bbox.height / dpi / 4)
     plt.savefig(image_name)
     plt.close()
