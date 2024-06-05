@@ -1,5 +1,5 @@
 import os
-from typing import List
+from typing import List, Tuple
 
 import matplotlib.pyplot as plt
 import typer
@@ -8,9 +8,9 @@ import typer
 def latex2image(
     latex_expression: str,
     image_name: str,
-    image_size_px=(1000, 200),
-    fontsize=16,
-    dpi=200,
+    image_size_px: Tuple[int, int] = (1000, 200),
+    fontsize: int = 16,
+    dpi: int = 200,
 ):
     """
     A simple function to generate an image from a LaTeX language string.
