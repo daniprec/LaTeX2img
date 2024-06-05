@@ -2,6 +2,8 @@ import os
 from typing import List
 
 import matplotlib.pyplot as plt
+import typer
+
 
 def latex2image(
     latex_expression: str,
@@ -53,7 +55,9 @@ def latex2image(
         \usepackage{graphicx}
         \setlength\parindent{0pt}
         \setlength\textwidth{$in}
-        """.replace("$", w)
+        """.replace(
+        "$", w
+    )
     plt.rc("text.latex", preamble=preamble)
 
     try:
@@ -120,5 +124,9 @@ def read_tex(path_file: str, path_output: str):
                 end_index = None
 
 
+def main(file: str = "examples/examplea.tex", output: str = "output"):
+    read_tex(file, output)
+
+
 if __name__ == "__main__":
-    read_tex("examples/examplea.tex", "output")
+    typer.run(main)
