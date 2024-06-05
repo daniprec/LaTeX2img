@@ -46,6 +46,11 @@ def latex2image(
     w = str(image_size_in[0] * 0.9)
     preamble = r"""
         \usepackage{amsmath}
+        \usepackage{amssymb}
+        \usepackage{pifont}
+        \usepackage{xcolor}
+        \usepackage{tkz-euclide}
+        \usepackage{graphicx}
         \setlength\parindent{0pt}
         \setlength\textwidth{$in}
         """.replace("$", w)
@@ -62,8 +67,7 @@ def latex2image(
         )
         renderer = fig.canvas.get_renderer()
         bbox = text.get_window_extent(renderer=renderer)
-        scale = fontsize**(1/2) / dpi
-        fig.set_size_inches(image_size_in[0], scale * bbox.height)
+        fig.set_size_inches(image_size_in[0], bbox.height / dpi + 0.2)
         plt.savefig(image_name)
         plt.close()
     except Exception as e:
