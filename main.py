@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 
 # Runtime Configuration Parameters
 matplotlib.rc("text", usetex=True)
-matplotlib.rc("font", **{"family": "cmu-serif"})
+matplotlib.rc("font", family="cmu-serif")
 matplotlib.rc("text.latex", preamble=r"\usepackage{amsmath}")
 
 def latex2image(
@@ -47,20 +47,25 @@ def latex2image(
 
     fig = plt.figure(figsize=image_size_in, dpi=dpi)
 
-    text = fig.text(
-        x=0.05,
-        y=0.5,
-        s=latex_expression,
-        horizontalalignment="left",
-        verticalalignment="center",
-        fontsize=fontsize,
-        wrap=True,
-    )
-    renderer = fig.canvas.get_renderer()
-    bbox = text.get_window_extent(renderer=renderer)
-    fig.set_size_inches(image_size_in[0], fontsize * bbox.height / dpi / 4)
-    plt.savefig(image_name)
-    plt.close()
+    try:
+        text = fig.text(
+            x=0.05,
+            y=0.5,
+            s=latex_expression,
+            horizontalalignment="left",
+            verticalalignment="center",
+            fontsize=fontsize,
+        )
+        renderer = fig.canvas.get_renderer()
+        bbox = text.get_window_extent(renderer=renderer)
+        scale = fontsize**(1/2) / dpi
+        fig.set_size_inches(image_size_in[0], scale * bbox.height)
+        plt.savefig(image_name)
+        plt.close()
+    except Exception as e:
+        print(f"\n---\nError in latex2image: {image_name}")
+        print(repr(e))
+        return None
 
 
 def process_question(lines: List[str], fout: str):
