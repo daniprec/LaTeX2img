@@ -36,10 +36,6 @@ def latex2image(
 
     """
     image_size_in = (image_size_px[0] / dpi, image_size_px[1] / dpi)
-    while latex_expression.endswith("\n") or latex_expression.endswith(" "):
-        latex_expression = latex_expression.rstrip()
-    while latex_expression.startswith("\n") or latex_expression.startswith(" "):
-        latex_expression = latex_expression.lstrip()
 
     fig = plt.figure(figsize=image_size_in, dpi=dpi)
     # Runtime Configuration Parameters
@@ -60,24 +56,19 @@ def latex2image(
     )
     plt.rc("text.latex", preamble=preamble)
 
-    try:
-        text = fig.text(
-            x=0.05,
-            y=0.5,
-            s=latex_expression,
-            horizontalalignment="left",
-            verticalalignment="center",
-            fontsize=fontsize,
-        )
-        renderer = fig.canvas.get_renderer()
-        bbox = text.get_window_extent(renderer=renderer)
-        fig.set_size_inches(image_size_in[0], bbox.height / dpi + 0.2)
-        plt.savefig(image_name)
-        plt.close()
-    except Exception as e:
-        print(f"\n---\nError in latex2image: {image_name}")
-        print(repr(e))
-        return None
+    text = fig.text(
+        x=0.05,
+        y=0.5,
+        s=latex_expression,
+        horizontalalignment="left",
+        verticalalignment="center",
+        fontsize=fontsize,
+    )
+    renderer = fig.canvas.get_renderer()
+    bbox = text.get_window_extent(renderer=renderer)
+    fig.set_size_inches(image_size_in[0], bbox.height / dpi + 0.2)
+    plt.savefig(image_name)
+    plt.close()
 
 
 def process_question(lines: List[str], fout: str):
@@ -86,7 +77,7 @@ def process_question(lines: List[str], fout: str):
     for line in lines:
         if line.startswith("%"):
             continue
-        elif line.strip().startswith("\\choice"):
+        elif line.startswith("\\choice"):
             idx_choice += 1
             if "\\choice[!]" in line:
                 extra = "_correct"
@@ -109,19 +100,19 @@ def read_tex(path_file: str, path_output: str):
     with open(path_file, "r") as f:
         lines = f.readlines()
         question_index = 0
-        start_index = None
-        end_index = None
-        for i, line in enumerate(lines):
-            if line.strip() == "\\begin{question}":
+        for line in lines:
+            line = line.strip()
+            if line.startswith("\\begin{question}"):
                 question_index += 1
-                start_index = i
-            elif line.strip() == "\\end{question}":
-                end_index = i
-            if start_index is not None and end_index is not None:
+                line = line.replace("\\begin{question}", "").strip()
+                question_lines = [line]  # Reset
+            elif line.endswith("\\end{question}"):
+                line = line.replace("\\end{question}", "").strip()
+                question_lines.append(line)
                 fout = path_output + f"/Q{question_index:03d}"
-                process_question(lines[start_index + 1 : end_index], fout)
-                start_index = None
-                end_index = None
+                process_question(question_lines, fout)
+            elif question_index > 0:
+                question_lines.append(line)
 
 
 def main(file: str = "examples/examplea.tex", output: str = "output"):
