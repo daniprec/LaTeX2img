@@ -1,4 +1,5 @@
 import os
+import re
 from typing import List, Tuple
 
 import matplotlib.pyplot as plt
@@ -101,16 +102,33 @@ def read_tex(path_file: str, path_output: str):
         lines = f.readlines()
 
     question_index = 0
+    section = None
+    subsection = None
     for line in lines:
         line = line.strip()
-        if line.startswith("\\begin{question}"):
+        if line.startswith("\\begin{multiplechoice}"):
+            # Example: \begin{multiplechoice}[title={Algebra}, resetcounter=no]
+            section = re.search(r"title={(.+?)}", line).group(1)
+            section = section.replace(" ", "_")
+            question_index = 0  # Reset
+            subsection = None  # Reset
+        elif line.startswith("\\subsection{"):
+            subsection = re.search(r"subsection{(.+?)}", line).group(1)
+            subsection = subsection.replace(" ", "_")
+            question_index = 0  # Reset
+        elif line.startswith("\\begin{question}"):
             question_index += 1
             line = line.replace("\\begin{question}", "").strip()
             question_lines = [line]  # Reset
         elif line.endswith("\\end{question}"):
             line = line.replace("\\end{question}", "").strip()
             question_lines.append(line)
-            fout = path_output + f"/Q{question_index:03d}"
+            fout = path_output + "/"
+            if section is not None:
+                fout += f"{section}_"
+            if subsection is not None:
+                fout += f"{subsection}_"
+            fout += f"Q{question_index:03d}"
             process_question(question_lines, fout)
         elif question_index > 0:
             question_lines.append(line)
