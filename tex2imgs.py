@@ -29,12 +29,6 @@ def latex2image(
     fontsize : float or str, optional
         Font size, that can be expressed as float or
         {'xx-small', 'x-small', 'small', 'medium', 'large', 'x-large', 'xx-large'}.
-
-    Returns
-    -------
-    fig : object
-        Matplotlib figure object from the class: matplotlib.figure.Figure.
-
     """
     image_size_in = (image_size_px[0] / dpi, image_size_px[1] / dpi)
 
@@ -73,6 +67,9 @@ def latex2image(
 
 
 def process_question(lines: List[str], fout: str):
+    """
+    Process a question and its choices.
+    """
     idx_choice = 0
     ls_question = []
     for line in lines:
@@ -95,6 +92,9 @@ def process_question(lines: List[str], fout: str):
 
 
 def read_tex(path_file: str, path_output: str):
+    """
+    Read a LaTeX file and extract the questions and choices.
+    """
     if not os.path.exists(path_output):
         os.makedirs(path_output)
 
