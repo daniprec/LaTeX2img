@@ -99,20 +99,21 @@ def read_tex(path_file: str, path_output: str):
 
     with open(path_file, "r") as f:
         lines = f.readlines()
-        question_index = 0
-        for line in lines:
-            line = line.strip()
-            if line.startswith("\\begin{question}"):
-                question_index += 1
-                line = line.replace("\\begin{question}", "").strip()
-                question_lines = [line]  # Reset
-            elif line.endswith("\\end{question}"):
-                line = line.replace("\\end{question}", "").strip()
-                question_lines.append(line)
-                fout = path_output + f"/Q{question_index:03d}"
-                process_question(question_lines, fout)
-            elif question_index > 0:
-                question_lines.append(line)
+
+    question_index = 0
+    for line in lines:
+        line = line.strip()
+        if line.startswith("\\begin{question}"):
+            question_index += 1
+            line = line.replace("\\begin{question}", "").strip()
+            question_lines = [line]  # Reset
+        elif line.endswith("\\end{question}"):
+            line = line.replace("\\end{question}", "").strip()
+            question_lines.append(line)
+            fout = path_output + f"/Q{question_index:03d}"
+            process_question(question_lines, fout)
+        elif question_index > 0:
+            question_lines.append(line)
 
 
 def main(file: str = "examples/examplea.tex", output: str = "output"):
