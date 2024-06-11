@@ -1,5 +1,6 @@
 import os
 import re
+import zipfile
 from typing import List, Tuple
 
 import matplotlib.pyplot as plt
@@ -95,8 +96,13 @@ def read_tex(path_file: str, path_output: str):
     """
     Read a LaTeX file and extract the questions and choices.
     """
-    if not os.path.exists(path_output):
-        os.makedirs(path_output)
+    if path_output.endswith(".zip"):
+        out_folder = path_output[:-4]
+    else:
+        out_folder = path_output
+
+    if not os.path.exists(out_folder):
+        os.makedirs(out_folder)
 
     with open(path_file, "r") as f:
         lines = f.readlines()
@@ -123,7 +129,7 @@ def read_tex(path_file: str, path_output: str):
         elif line.endswith("\\end{question}"):
             line = line.replace("\\end{question}", "").strip()
             question_lines.append(line)
-            fout = path_output + "/"
+            fout = out_folder + "/"
             if section is not None:
                 fout += f"{section}_"
             if subsection is not None:
@@ -132,6 +138,17 @@ def read_tex(path_file: str, path_output: str):
             process_question(question_lines, fout)
         elif question_index > 0:
             question_lines.append(line)
+
+    # Zip the images
+    if path_output.endswith(".zip"):
+        with zipfile.ZipFile(path_output, "w") as zipf:
+            for root, dirs, files in os.walk(out_folder):
+                for file in files:
+                    if file.endswith(".png"):
+                        zipf.write(os.path.join(root, file), file)
+                        os.remove(os.path.join(root, file))
+        # Remove the folder
+        os.rmdir(out_folder)
 
 
 def main(file: str = "examples/examplea.tex", output: str = "output"):
