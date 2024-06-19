@@ -47,6 +47,7 @@ def latex2image(
         \usepackage{graphicx}
         \setlength\parindent{0pt}
         \setlength\textwidth{$in}
+        \linespread{1.5}
         """.replace(
         "$", w
     )
@@ -90,7 +91,7 @@ def process_question(lines: List[str], fout: str, separate_choices: bool = False
                 # Remove the "\\choice[!]"
                 line = line.replace("\\choice[!]", "").replace("\\choice", "")
                 # Add the letter and a new line
-                line = f"\\\\ {chr(65 + idx_choice - 1)}. {line}"
+                line = r"\\\\ \textbf{" + chr(65 + idx_choice - 1) + r")} " + line
                 ls_question.append(line)
         else:
             ls_question.append(line)
