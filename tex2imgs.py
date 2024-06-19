@@ -1,9 +1,11 @@
 import os
 import re
 import zipfile
-from typing import List, Tuple
+from pathlib import Path
+from typing import Dict, List, Tuple
 
 import matplotlib.pyplot as plt
+import pandas as pd
 import typer
 
 
@@ -68,10 +70,14 @@ def latex2image(
     plt.close()
 
 
-def process_question(lines: List[str], fout: str, separate_choices: bool = False):
+def process_question(
+    lines: List[str], fout: str, separate_choices: bool = False
+) -> Dict:
     """
     Process a question and its choices.
     """
+    fout_question = Path(fout + ".png")
+    dict_question = {"Item": fout_question.stem}
     idx_choice = 0
     ls_question = []
     for line in lines:
@@ -79,14 +85,21 @@ def process_question(lines: List[str], fout: str, separate_choices: bool = False
             continue
         elif line.startswith("\\choice"):
             idx_choice += 1
+
+            if "\\choice[!]" in line:
+                extra = "_correct"
+                score = 1
+            else:
+                extra = ""
+                score = 0
+            dict_question[f"Score for answer {idx_choice}"] = score
+
             if separate_choices:
-                if "\\choice[!]" in line:
-                    extra = "_correct"
-                else:
-                    extra = ""
                 # Extract the text inside "{}"
                 txt = line[line.find("{") + 1 : line.rfind("}")]
-                latex2image(txt, fout + f"_A{idx_choice}{extra}.png")
+                fout_choice = Path(fout + f"_A{idx_choice}{extra}.png")
+                dict_question[f"answer_{idx_choice}"] = fout_choice.stem
+                latex2image(txt, fout_choice)
             else:
                 # Remove the "\\choice[!]"
                 line = line.replace("\\choice[!]", "").replace("\\choice", "")
@@ -97,7 +110,8 @@ def process_question(lines: List[str], fout: str, separate_choices: bool = False
             ls_question.append(line)
     # Extract the question
     txt = "".join(ls_question)
-    latex2image(txt, fout + ".png")
+    latex2image(txt, fout_question)
+    return dict_question
 
 
 def read_tex(path_file: str, path_output: str, separate_choices: bool = False):
@@ -115,12 +129,15 @@ def read_tex(path_file: str, path_output: str, separate_choices: bool = False):
     with open(path_file, "r") as f:
         lines = f.readlines()
 
+    ls_dict_questions = []
     question_index = 0
     section = None
     subsection = None
-    for line in lines:
+    for idx, line in enumerate(lines):
         line = line.strip()
-        if line.startswith("\\begin{multiplechoice}"):
+        if line.startswith("%"):
+            continue
+        elif line.startswith("\\begin{multiplechoice}"):
             # Example: \begin{multiplechoice}[title={Algebra}, resetcounter=no]
             section = re.search(r"title={(.+?)}", line).group(1)
             section = section.replace(" ", "_")
@@ -143,16 +160,33 @@ def read_tex(path_file: str, path_output: str, separate_choices: bool = False):
             if subsection is not None:
                 fout += f"{subsection}_"
             fout += f"Q{question_index:03d}"
-            process_question(question_lines, fout, separate_choices=separate_choices)
+            try:
+                dict_question = process_question(
+                    question_lines, fout, separate_choices=separate_choices
+                )
+            except Exception as e:
+                print(f"Error in question {fout}, line {idx}")
+                # Save a traceback
+                with open(out_folder + f"/error_{idx:04d}.txt", "w") as f:
+                    f.write(str(e))
+            ls_dict_questions.append(dict_question)
         elif question_index > 0:
             question_lines.append(line)
+
+    # Turn the list of dictionaries into a DataFrame
+    df = pd.DataFrame(ls_dict_questions)
+    df.to_csv(out_folder + "/questions.csv", index=False)
 
     # Zip the images
     if path_output.endswith(".zip"):
         with zipfile.ZipFile(path_output, "w") as zipf:
             for root, dirs, files in os.walk(out_folder):
                 for file in files:
-                    if file.endswith(".png"):
+                    if (
+                        file.endswith(".png")
+                        or file.endswith(".csv")
+                        or file.endswith(".txt")
+                    ):
                         zipf.write(os.path.join(root, file), file)
                         os.remove(os.path.join(root, file))
         # Remove the folder
@@ -160,7 +194,7 @@ def read_tex(path_file: str, path_output: str, separate_choices: bool = False):
 
 
 def main(
-    file: str = "examples/examplea.tex",
+    file: str = "examples/real.tex",
     output: str = "output",
     separate_choices: bool = False,
 ):
