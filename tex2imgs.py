@@ -67,7 +67,7 @@ def latex2image(
     plt.close()
 
 
-def process_question(lines: List[str], fout: str):
+def process_question(lines: List[str], fout: str, separate_choices: bool = False):
     """
     Process a question and its choices.
     """
@@ -78,13 +78,20 @@ def process_question(lines: List[str], fout: str):
             continue
         elif line.startswith("\\choice"):
             idx_choice += 1
-            if "\\choice[!]" in line:
-                extra = "_correct"
+            if separate_choices:
+                if "\\choice[!]" in line:
+                    extra = "_correct"
+                else:
+                    extra = ""
+                # Extract the text inside "{}"
+                txt = line[line.find("{") + 1 : line.rfind("}")]
+                latex2image(txt, fout + f"_A{idx_choice}{extra}.png")
             else:
-                extra = ""
-            # Extract the text inside "{}"
-            txt = line[line.find("{") + 1 : line.rfind("}")]
-            latex2image(txt, fout + f"_A{idx_choice}{extra}.png")
+                # Remove the "\\choice[!]"
+                line = line.replace("\\choice[!]", "").replace("\\choice", "")
+                # Add the letter and a new line
+                line = f"\\\\ {chr(65 + idx_choice - 1)}. {line}"
+                ls_question.append(line)
         else:
             ls_question.append(line)
     # Extract the question
@@ -92,7 +99,7 @@ def process_question(lines: List[str], fout: str):
     latex2image(txt, fout + ".png")
 
 
-def read_tex(path_file: str, path_output: str):
+def read_tex(path_file: str, path_output: str, separate_choices: bool = False):
     """
     Read a LaTeX file and extract the questions and choices.
     """
@@ -135,7 +142,7 @@ def read_tex(path_file: str, path_output: str):
             if subsection is not None:
                 fout += f"{subsection}_"
             fout += f"Q{question_index:03d}"
-            process_question(question_lines, fout)
+            process_question(question_lines, fout, separate_choices=separate_choices)
         elif question_index > 0:
             question_lines.append(line)
 
@@ -151,8 +158,12 @@ def read_tex(path_file: str, path_output: str):
         os.rmdir(out_folder)
 
 
-def main(file: str = "examples/examplea.tex", output: str = "output"):
-    read_tex(file, output)
+def main(
+    file: str = "examples/examplea.tex",
+    output: str = "output",
+    separate_choices: bool = False,
+):
+    read_tex(file, output, separate_choices=separate_choices)
 
 
 if __name__ == "__main__":
