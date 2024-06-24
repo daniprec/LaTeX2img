@@ -2,7 +2,7 @@ import os
 import re
 import zipfile
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -74,10 +74,28 @@ def latex2image(
 
 
 def process_question(
-    lines: List[str], fout: str, separate_choices: bool = False
+    lines: List[str],
+    fout: str,
+    separate_choices: bool = False,
+    score_good: float = 1,
+    score_bad: Optional[float] = None,
 ) -> Dict:
     """
     Process a question and its choices.
+
+    Parameters
+    ----------
+    lines : List[str]
+        List of lines of the question.
+    fout : str
+        Output filename (for the images).
+    separate_choices : bool, optional
+        Whether to create a separate image for each choice.
+    score_good : float, optional
+        Score for the correct answer.
+    score_bad : float, optional
+        Score for the wrong answers.
+        If None, it will be set to -score_good / number_of_choices.
     """
     fout_question = Path(fout + ".png")
     dict_question = {"Item": fout_question.stem}
@@ -91,10 +109,10 @@ def process_question(
 
             if "\\choice[!]" in line:
                 extra = "_correct"
-                score = 1
+                score = score_good
             else:
                 extra = ""
-                score = 0
+                score = score_bad
             dict_question[f"Score for answer {idx_choice}"] = score
 
             if separate_choices:
@@ -116,12 +134,37 @@ def process_question(
     # Extract the question
     txt = "".join(ls_question)
     latex2image(txt, fout_question)
+    # Replace the None in the dictionary by the formula below
+    score_bad = round(-score_good / idx_choice, 2)
+    for k, v in dict_question.items():
+        if v is None:
+            dict_question[k] = score_bad
     return dict_question
 
 
-def read_tex(path_file: str, path_output: str, separate_choices: bool = False):
+def read_tex(
+    path_file: str,
+    path_output: str,
+    separate_choices: bool = False,
+    score_good: float = 1,
+    score_bad: Optional[float] = None,
+):
     """
     Read a LaTeX file and extract the questions and choices.
+
+    Parameters
+    ----------
+    path_file : str
+        Path to the LaTeX file.
+    path_output : str
+        Path to the output folder or zip file.
+    separate_choices : bool, optional
+        Whether to create a separate image for each choice.
+    score_good : float, optional
+        Score for the correct answer.
+    score_bad : float, optional
+        Score for the wrong answers.
+        If None, it will be set to -score_good / number_of_choices.
     """
     if path_output.endswith(".zip"):
         out_folder = path_output[:-4]
@@ -167,7 +210,11 @@ def read_tex(path_file: str, path_output: str, separate_choices: bool = False):
             fout += f"Q{question_index:03d}"
             try:
                 dict_question = process_question(
-                    question_lines, fout, separate_choices=separate_choices
+                    question_lines,
+                    fout,
+                    separate_choices=separate_choices,
+                    score_good=score_good,
+                    score_bad=score_bad,
                 )
             except Exception as e:
                 print(f"Error in question {fout}, line {idx}")
@@ -201,9 +248,17 @@ def read_tex(path_file: str, path_output: str, separate_choices: bool = False):
 def main(
     file: str = "examples/real.tex",
     output: str = "output",
-    separate_choices: bool = False,
+    separate: bool = False,
+    good: float = 1,
+    bad: Optional[float] = None,
 ):
-    read_tex(file, output, separate_choices=separate_choices)
+    read_tex(
+        file,
+        output,
+        separate_choices=separate,
+        score_good=good,
+        score_bad=bad,
+    )
 
 
 if __name__ == "__main__":
