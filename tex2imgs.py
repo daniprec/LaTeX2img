@@ -108,6 +108,8 @@ def process_question(
                 ls_question.append(line)
         else:
             ls_question.append(line)
+    # Remove comments "%" at the end of every line, unless they are "\%"
+    ls_question = [re.sub(r"(?<!\\)%.*", "", line) for line in ls_question]
     # Extract the question
     txt = "".join(ls_question)
     latex2image(txt, fout_question)
