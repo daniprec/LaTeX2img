@@ -179,10 +179,13 @@ def read_tex(
 
     ls_dict_questions = []
     question_index = 0
+    version_index = None
     section = None
     subsection = None
     for idx, line in enumerate(lines):
         line = line.strip()
+        if line.startswith("%#original"):
+            version_index = 0
         if line.startswith("%"):
             continue
         elif line.startswith("\\begin{multiplechoice}"):
@@ -196,7 +199,13 @@ def read_tex(
             subsection = subsection.replace(" ", "_")
             question_index = 0  # Reset
         elif line.startswith("\\begin{question}"):
-            question_index += 1
+            if version_index is None:
+                question_index += 1
+            elif version_index == 0:
+                question_index += 1
+                version_index += 1
+            else:
+                version_index += 1
             line = line.replace("\\begin{question}", "").strip()
             question_lines = [line]  # Reset
         elif line.endswith("\\end{question}"):
@@ -208,6 +217,8 @@ def read_tex(
             if subsection is not None:
                 fout += f"{subsection}_"
             fout += f"Q{question_index:03d}"
+            if version_index is not None:
+                fout += f"_V{version_index:02d}"
             try:
                 dict_question = process_question(
                     question_lines,
