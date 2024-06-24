@@ -66,6 +66,9 @@ def latex2image(
     renderer = fig.canvas.get_renderer()
     bbox = text.get_window_extent(renderer=renderer)
     fig.set_size_inches(image_size_in[0], bbox.height / dpi + 0.2)
+    # Check if the text overflows the image
+    if bbox.width > image_size_px[0]:
+        raise ValueError(f"The text overflows the image width:\n{latex_expression}")
     plt.savefig(image_name)
     plt.close()
 
