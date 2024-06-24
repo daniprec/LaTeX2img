@@ -216,12 +216,12 @@ def read_tex(
                     score_good=score_good,
                     score_bad=score_bad,
                 )
+                ls_dict_questions.append(dict_question)
             except Exception as e:
                 print(f"Error in question {fout}, line {idx}")
                 # Save a traceback
                 with open(out_folder + f"/error_{idx:04d}.txt", "w") as f:
                     f.write(str(e))
-            ls_dict_questions.append(dict_question)
         elif question_index > 0:
             question_lines.append(line)
 
