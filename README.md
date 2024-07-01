@@ -25,6 +25,9 @@
 
 This repository reads LaTeX multiple-choice questions and generates an image for each equation and each choice.
 
+Access the cloud version here:
+[https://ie-bam-latex2img.streamlit.app/](https://ie-bam-latex2img.streamlit.app/)
+
 ## Running the Script
 
 You can run the script in the command line using Python:
