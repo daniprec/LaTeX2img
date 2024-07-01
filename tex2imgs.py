@@ -44,10 +44,17 @@ def latex2image(
     preamble = r"""
         \usepackage{amsmath}
         \usepackage{amssymb}
-        \usepackage{pifont}
-        \usepackage{xcolor}
-        \usepackage{tkz-euclide}
+        \usepackage{caption}
+        \usepackage{subcaption}
         \usepackage{graphicx}
+        \usepackage{mathtools}
+        \usepackage{pgfplots}
+        \usepackage{pifont}
+        \usepackage{tikz}
+        \usepackage{tkz-euclide}
+        \usetikzlibrary{calc}
+        \usepackage{xcolor}
+        \usepackage{wrapfig}
         \setlength\parindent{0pt}
         \setlength\textwidth{$in}
         \linespread{1.5}
