@@ -1,5 +1,6 @@
 import os
 import re
+import sys
 import zipfile
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple, Union
@@ -148,7 +149,6 @@ def read_tex(
     separate_choices: bool = False,
     score_good: float = 1,
     score_bad: Optional[float] = None,
-    generator: bool = False,
 ):
     """
     Read a LaTeX file and extract the questions and choices.
@@ -240,8 +240,8 @@ def read_tex(
                     f.write(str(e))
         elif question_index > 0:
             question_lines.append(line)
-        if generator:
-            yield idx / len(lines)
+        # Yield the progress (this makes a generator)
+        yield idx / len(lines)
 
     # Turn the list of dictionaries into a DataFrame
     df = pd.DataFrame(ls_dict_questions)
@@ -270,13 +270,16 @@ def main(
     good: float = 1,
     bad: Optional[float] = None,
 ):
-    read_tex(
+    gen = read_tex(
         file,
         output,
         separate_choices=separate,
         score_good=good,
         score_bad=bad,
     )
+    for p in gen:
+        sys.stdout.write("\r%d%%" % p)
+        sys.stdout.flush()
 
 
 if __name__ == "__main__":
