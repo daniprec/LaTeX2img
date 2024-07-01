@@ -2,7 +2,7 @@ import os
 import re
 import zipfile
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, Union
 
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -143,11 +143,12 @@ def process_question(
 
 
 def read_tex(
-    path_file: str,
+    path_file: Union[str, List[str]],
     path_output: str,
     separate_choices: bool = False,
     score_good: float = 1,
     score_bad: Optional[float] = None,
+    generator: bool = False,
 ):
     """
     Read a LaTeX file and extract the questions and choices.
@@ -174,8 +175,12 @@ def read_tex(
     if not os.path.exists(out_folder):
         os.makedirs(out_folder)
 
-    with open(path_file, "r") as f:
-        lines = f.readlines()
+    if isinstance(path_file, str):
+        with open(path_file, "r") as f:
+            lines = f.readlines()
+    else:
+        # Assume it is a list of strings
+        lines = path_file
 
     ls_dict_questions = []
     question_index = 0
@@ -235,6 +240,8 @@ def read_tex(
                     f.write(str(e))
         elif question_index > 0:
             question_lines.append(line)
+        if generator:
+            yield idx / len(lines)
 
     # Turn the list of dictionaries into a DataFrame
     df = pd.DataFrame(ls_dict_questions)
