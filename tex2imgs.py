@@ -278,7 +278,7 @@ def main(
         score_bad=bad,
     )
     for p in gen:
-        sys.stdout.write("\r%d%%" % p)
+        sys.stdout.write("\r%d%%" % (p * 100))
         sys.stdout.flush()
 
 
