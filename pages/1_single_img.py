@@ -1,8 +1,9 @@
 import os
+import shutil
 
 import streamlit as st
 
-from tex2imgs import process_question
+from tex2imgs import read_tex
 
 st.title("Single Question")
 # Text block where the user can input the LaTeX expression
@@ -17,17 +18,27 @@ latex_expression = st.text_area(
 
 # Button
 if st.button("Generate Image"):
-    # Replace more than one " " with a single " "
-    lines = " ".join(latex_expression.split())
-    # Split the lines by "\n" right before the "\choice"
-    # Keeping the "\choice" in the lines
-    lines = lines.split(r"\choice")
-    lines = [lines[0]] + [r"\choice" + line for line in lines[1:]]
+    path_file = "temp.tex"
+    path_folder = "temp"
+    # Include the \begin{question} and \end{question} tags
+    latex_expression = r"\begin{question}" + latex_expression + r"\end{question}"
+
+    # Generate a tex file containing the LaTeX expression
+    with open(path_file, "w") as f:
+        f.write(latex_expression)
     # Generate the image
-    process_question(lines, "temp")
+    gen = read_tex(path_file, path_folder)
+    for _ in gen:
+        pass
+
+    # Find the png image inside the folder
+    for file in os.listdir(path_folder):
+        if file.endswith(".png"):
+            path_img = os.path.join(path_folder, file)
+            break
 
     # Display the image
-    st.image("temp.png")
+    st.image(path_img)
 
-    # Remove the image
-    os.remove("temp.png")
+    os.remove(path_file)
+    shutil.rmtree(path_folder)
