@@ -36,7 +36,6 @@ if file is not None:
         separate_choices=False,
         score_good=1.0,
         score_bad=None,
-        generator=True,
     )
 
     # Iterate over the generator to update the loading bar
