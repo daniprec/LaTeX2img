@@ -1,13 +1,45 @@
 import os
 import re
+import subprocess
 import sys
 import zipfile
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple, Union
 
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 import typer
+from pdf2image import convert_from_path
+
+TXT_FULL = r"""
+    \documentclass[12pt]{article}
+    \usepackage[
+    paperwidth=15cm,
+    paperheight=15cm,
+    hmargin=1cm,
+    vmargin=1cm,
+    ]{geometry}
+    \usepackage{amsmath}
+    \usepackage{amssymb}
+    \usepackage{caption}
+    \usepackage{subcaption}
+    \usepackage{graphicx}
+    \usepackage{mathtools}
+    \usepackage{pgfplots}
+    \usepackage{pifont}
+    \usepackage{tikz}
+    \usepackage{tkz-euclide}
+    \usetikzlibrary{calc}
+    \usepackage{xcolor}
+    \usepackage{wrapfig}
+    \setlength\parindent{0pt}
+    \linespread{1.25}
+    \pagenumbering{gobble}
+
+    \begin{document}
+
+    """
 
 
 def latex2image(
@@ -84,7 +116,6 @@ def latex2image(
 def process_question(
     lines: List[str],
     fout: str,
-    separate_choices: bool = False,
     score_good: float = 1,
     score_bad: Optional[float] = None,
 ) -> Dict:
@@ -116,46 +147,36 @@ def process_question(
             idx_choice += 1
 
             if "\\choice[!]" in line:
-                extra = "_correct"
                 score = score_good
             else:
-                extra = ""
                 score = score_bad
             dict_question[f"Score for answer {idx_choice}"] = score
 
-            if separate_choices:
-                # Extract the text inside "{}"
-                txt = line[line.find("{") + 1 : line.rfind("}")]
-                fout_choice = Path(fout + f"_A{idx_choice}{extra}.png")
-                dict_question[f"answer_{idx_choice}"] = fout_choice.stem
-                latex2image(txt, fout_choice)
-            else:
-                # Remove the "\\choice[!]"
-                line = line.replace("\\choice[!]", "").replace("\\choice", "")
-                # Add the letter and a new line
-                line = r"\\\\ \textbf{" + chr(65 + idx_choice - 1) + r")} " + line
-                ls_question.append(line)
+            # Remove the "\\choice[!]"
+            line = line.replace("\\choice[!]", "").replace("\\choice", "")
+            # Add the letter and a new line
+            line = r"\\ \textbf{" + chr(65 + idx_choice - 1) + r")} " + line
+            ls_question.append(line)
         else:
             ls_question.append(line)
     # Remove comments "%" at the end of every line, unless they are "\%"
     ls_question = [re.sub(r"(?<!\\)%.*", "", line) for line in ls_question]
     # Extract the question
     txt = "".join(ls_question)
-    latex2image(txt, fout_question)
     # Replace the None in the dictionary by the formula below
     score_bad = round(-score_good / idx_choice, 2)
     for k, v in dict_question.items():
         if v is None:
             dict_question[k] = score_bad
-    return dict_question
+    return txt, dict_question
 
 
 def read_tex(
     path_file: Union[str, List[str]],
     path_output: str,
-    separate_choices: bool = False,
     score_good: float = 1,
     score_bad: Optional[float] = None,
+    batch_size: int = 50,
 ):
     """
     Read a LaTeX file and extract the questions and choices.
@@ -166,8 +187,6 @@ def read_tex(
         Path to the LaTeX file.
     path_output : str
         Path to the output folder or zip file.
-    separate_choices : bool, optional
-        Whether to create a separate image for each choice.
     score_good : float, optional
         Score for the correct answer.
     score_bad : float, optional
@@ -189,11 +208,14 @@ def read_tex(
         # Assume it is a list of strings
         lines = path_file
 
+    txt_full = TXT_FULL
     ls_dict_questions = []
+    ls_fout = []
     question_index = 0
     version_index = None
     section = None
     subsection = None
+
     for idx, line in enumerate(lines):
         line = line.strip()
         if line.startswith("%#original"):
@@ -232,14 +254,15 @@ def read_tex(
             if version_index is not None:
                 fout += f"_V{version_index:02d}"
             try:
-                dict_question = process_question(
+                txt, dict_question = process_question(
                     question_lines,
                     fout,
-                    separate_choices=separate_choices,
                     score_good=score_good,
                     score_bad=score_bad,
                 )
                 ls_dict_questions.append(dict_question)
+                txt_full += "\n\\newpage\n" + txt
+                ls_fout.append(fout)
             except Exception as e:
                 print(f"Error in question {fout}, line {idx}")
                 # Save a traceback
@@ -247,12 +270,52 @@ def read_tex(
                     f.write(str(e))
         elif question_index > 0:
             question_lines.append(line)
-        # Yield the progress (this makes a generator)
-        yield idx / len(lines)
+
+    txt_full += "\n\end{document}"
+
+    with open("cover.tex", "w") as f:
+        f.write(txt_full)
+
+    cmd = ["pdflatex", "-interaction", "nonstopmode", "cover.tex"]
+    proc = subprocess.Popen(cmd)
+    proc.communicate()
+
+    retcode = proc.returncode
+    if not retcode == 0:
+        os.unlink("cover.pdf")
+        raise ValueError(
+            "Error {} executing command: {}".format(retcode, " ".join(cmd))
+        )
 
     # Turn the list of dictionaries into a DataFrame
     df = pd.DataFrame(ls_dict_questions)
     df.to_csv(out_folder + "/questions.csv", index=False)
+
+    # Convert the PDF to PNG
+    j = 0
+    for i, fout in enumerate(ls_fout):
+        if i % batch_size == 0:
+            images = convert_from_path(
+                "cover.pdf", first_page=i + 1, last_page=i + batch_size
+            )
+            j = i
+        img = images[i - j]
+        whites = (255 - np.asarray(img)).sum(axis=2)
+        # Find the first row with non-white pixels
+        y1 = np.argmax(whites.sum(axis=1) > 0)
+        # Find the last row with non-white pixels
+        y2 = np.argmax(whites[::-1].sum(axis=1) > 0)
+        # Crop the image
+        w, h = img.size
+        y2 = h - y2 + y1
+        img = img.crop((0, 0, w, y2))
+        img.save(fout + ".png", "PNG")
+        yield (i + 1) / len(ls_fout)
+
+    # Remove auxiliary files
+    for ext in ["aux", "log", "out", "pdf", "tex"]:
+        if os.path.exists("cover." + ext):
+            os.unlink("cover." + ext)
 
     # Zip the images
     if path_output.endswith(".zip"):
@@ -273,14 +336,12 @@ def read_tex(
 def main(
     file: str = "examples/real.tex",
     output: str = "output",
-    separate: bool = False,
     good: float = 1,
     bad: Optional[float] = None,
 ):
     gen = read_tex(
         file,
         output,
-        separate_choices=separate,
         score_good=good,
         score_bad=bad,
     )

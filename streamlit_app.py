@@ -33,7 +33,6 @@ if file is not None:
     generator = read_tex(
         path_file=file,
         path_output="output.zip",
-        separate_choices=False,
         score_good=1.0,
         score_bad=None,
     )
