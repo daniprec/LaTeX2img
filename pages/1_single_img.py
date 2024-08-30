@@ -20,7 +20,6 @@ latex_expression = st.text_area(
 col1, col2 = st.columns(2)
 # Aspect ratio dropdown
 aspectratio = col1.selectbox("Aspect Ratio", ["4:1", "3:1", "16:9", "16:10", "4:3"])
-aspectratio = int(aspectratio.replace(":", ""))
 # DPI
 dpi = col2.number_input("DPI", value=100, min_value=10, max_value=1000, step=10)
 
@@ -35,7 +34,9 @@ if st.button("Generate Image"):
     with open(path_file, "w") as f:
         f.write(latex_expression)
     # Generate the image
-    gen = read_tex(path_file, path_folder, aspectratio=aspectratio, dpi=dpi)
+    gen = read_tex(
+        path_file, path_folder, aspectratio=int(aspectratio.replace(":", "")), dpi=dpi
+    )
     for _ in gen:
         pass
 
