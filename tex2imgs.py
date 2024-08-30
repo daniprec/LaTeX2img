@@ -192,11 +192,17 @@ def read_tex(
         If None, it will be set to -score_good / number_of_choices.
     aspectratio : int, optional
         Aspect ratio for the images, default is 169.
+        As of the 2022, arbitrary aspect ratios are available.
+        Two-digit numbers will be interpreted as X:Y,
+        three-digit numbers as XX:Y and four digit as XX:YY.
     dpi : int, optional
         Dots per inch for the images, default is 200.
     crop : bool, optional
         Whether to crop the images, default is False.
     """
+    # Insert the line in the preamble (third line)
+    txt_full = TXT_FULL.replace("$ASPECT$", str(aspectratio), 1)
+
     if path_output.endswith(".zip"):
         out_folder = path_output[:-4]
     else:
@@ -212,7 +218,6 @@ def read_tex(
         # Assume it is a list of strings
         lines = path_file
 
-    txt_full = TXT_FULL.replace("$ASPECT$", str(aspectratio))
     ls_dict_questions = []
     ls_fout = []
     question_index = 0
@@ -343,7 +348,7 @@ def main(
     output: str = "output",
     good: float = 1,
     bad: Optional[float] = None,
-    aspectratio: str = 169,
+    aspectratio: int = 169,
     dpi: int = 200,
     crop: bool = False,
 ):
