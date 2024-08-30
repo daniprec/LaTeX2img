@@ -23,31 +23,30 @@ aspectratio = col1.selectbox("Aspect Ratio", ["4:1", "3:1", "16:9", "16:10", "4:
 # DPI
 dpi = col2.number_input("DPI", value=100, min_value=10, max_value=1000, step=10)
 
-# Button
-if st.button("Generate Image"):
-    path_file = "temp.tex"
-    path_folder = "temp"
-    # Include the \begin{question} and \end{question} tags
-    latex_expression = r"\begin{question}" + latex_expression + r"\end{question}"
+# Run on real time
+path_file = "temp.tex"
+path_folder = "temp"
+# Include the \begin{question} and \end{question} tags
+latex_expression = r"\begin{question}" + latex_expression + r"\end{question}"
 
-    # Generate a tex file containing the LaTeX expression
-    with open(path_file, "w") as f:
-        f.write(latex_expression)
-    # Generate the image
-    gen = read_tex(
-        path_file, path_folder, aspectratio=int(aspectratio.replace(":", "")), dpi=dpi
-    )
-    for _ in gen:
-        pass
+# Generate a tex file containing the LaTeX expression
+with open(path_file, "w") as f:
+    f.write(latex_expression)
+# Generate the image
+gen = read_tex(
+    path_file, path_folder, aspectratio=int(aspectratio.replace(":", "")), dpi=dpi
+)
+for _ in gen:
+    pass
 
-    # Find the png image inside the folder
-    for file in os.listdir(path_folder):
-        if file.endswith(".png"):
-            path_img = os.path.join(path_folder, file)
-            break
+# Find the png image inside the folder
+for file in os.listdir(path_folder):
+    if file.endswith(".png"):
+        path_img = os.path.join(path_folder, file)
+        break
 
-    # Display the image
-    st.image(path_img)
+# Display the image
+st.image(path_img)
 
-    os.remove(path_file)
-    shutil.rmtree(path_folder)
+os.remove(path_file)
+shutil.rmtree(path_folder)
