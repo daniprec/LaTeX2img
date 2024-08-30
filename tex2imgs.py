@@ -13,13 +13,8 @@ import typer
 from pdf2image import convert_from_path
 
 TXT_FULL = r"""
-    \documentclass[12pt]{article}
-    \usepackage[
-    paperwidth=15cm,
-    paperheight=15cm,
-    hmargin=1cm,
-    vmargin=1cm,
-    ]{geometry}
+    \documentclass[12pt, aspectratio=$ASPECT$]{beamer}
+    \setbeamertemplate{navigation symbols}{}
     \usepackage{amsmath}
     \usepackage{amssymb}
     \usepackage{caption}
@@ -35,13 +30,13 @@ TXT_FULL = r"""
     \usepackage{wrapfig}
     \setlength\parindent{0pt}
     \linespread{1.25}
-    \pagenumbering{gobble}
 
     \begin{document}
 
     """
 
 
+# Deprecated function:use the pdf2image library instead
 def latex2image(
     latex_expression: str,
     image_name: str,
@@ -177,6 +172,9 @@ def read_tex(
     score_good: float = 1,
     score_bad: Optional[float] = None,
     batch_size: int = 50,
+    aspectratio: int = 169,
+    dpi: int = 200,
+    crop: bool = False,
 ):
     """
     Read a LaTeX file and extract the questions and choices.
@@ -192,6 +190,12 @@ def read_tex(
     score_bad : float, optional
         Score for the wrong answers.
         If None, it will be set to -score_good / number_of_choices.
+    aspectratio : int, optional
+        Aspect ratio for the images, default is 169.
+    dpi : int, optional
+        Dots per inch for the images, default is 200.
+    crop : bool, optional
+        Whether to crop the images, default is False.
     """
     if path_output.endswith(".zip"):
         out_folder = path_output[:-4]
@@ -208,7 +212,7 @@ def read_tex(
         # Assume it is a list of strings
         lines = path_file
 
-    txt_full = TXT_FULL
+    txt_full = TXT_FULL.replace("$ASPECT$", str(aspectratio))
     ls_dict_questions = []
     ls_fout = []
     question_index = 0
@@ -240,10 +244,10 @@ def read_tex(
                 version_index += 1
             else:
                 version_index += 1
-            line = line.replace("\\begin{question}", "").strip()
+            line = line.replace("\\begin{question}", "\\begin{frame}\n")
             question_lines = [line]  # Reset
         elif line.endswith("\\end{question}"):
-            line = line.replace("\\end{question}", "").strip()
+            line = line.replace("\\end{question}", "\\end{frame}\n")
             question_lines.append(line)
             fout = out_folder + "/"
             if section is not None:
@@ -261,7 +265,7 @@ def read_tex(
                     score_bad=score_bad,
                 )
                 ls_dict_questions.append(dict_question)
-                txt_full += "\n\\newpage\n" + txt
+                txt_full += txt
                 ls_fout.append(fout)
             except Exception as e:
                 print(f"Error in question {fout}, line {idx}")
@@ -296,24 +300,25 @@ def read_tex(
     for i, fout in enumerate(ls_fout):
         if i % batch_size == 0:
             images = convert_from_path(
-                "cover.pdf", first_page=i + 1, last_page=i + batch_size
+                "cover.pdf", first_page=i + 1, last_page=i + batch_size, dpi=dpi
             )
             j = i
         img = images[i - j]
         whites = (255 - np.asarray(img)).sum(axis=2)
-        # Find the first row with non-white pixels
-        y1 = np.argmax(whites.sum(axis=1) > 0)
-        # Find the last row with non-white pixels
-        y2 = np.argmax(whites[::-1].sum(axis=1) > 0)
-        # Crop the image
-        w, h = img.size
-        y2 = h - y2 + y1
-        img = img.crop((0, 0, w, y2))
+        if crop:
+            # Find the first row with non-white pixels
+            y1 = np.argmax(whites.sum(axis=1) > 0)
+            # Find the last row with non-white pixels
+            y2 = np.argmax(whites[::-1].sum(axis=1) > 0)
+            # Crop the image
+            w, h = img.size
+            y2 = h - y2 + y1
+            img = img.crop((0, 0, w, y2))
         img.save(fout + ".png", "PNG")
         yield (i + 1) / len(ls_fout)
 
     # Remove auxiliary files
-    for ext in ["aux", "log", "out", "pdf", "tex"]:
+    for ext in ["aux", "log", "nav", "out", "snm", "tex", "toc"]:
         if os.path.exists("cover." + ext):
             os.unlink("cover." + ext)
 
@@ -334,16 +339,22 @@ def read_tex(
 
 
 def main(
-    file: str = "examples/real.tex",
+    file: str = "examples/test.tex",
     output: str = "output",
     good: float = 1,
     bad: Optional[float] = None,
+    aspectratio: str = 169,
+    dpi: int = 200,
+    crop: bool = False,
 ):
     gen = read_tex(
         file,
         output,
         score_good=good,
         score_bad=bad,
+        aspectratio=aspectratio,
+        dpi=dpi,
+        crop=crop,
     )
     for p in gen:
         sys.stdout.write("\r%d%%" % (p * 100))
