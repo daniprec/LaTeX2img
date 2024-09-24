@@ -302,6 +302,8 @@ def read_tex(
     df = pd.DataFrame(ls_dict_questions)
     df.to_csv(out_folder + "/questions.csv", index=False)
 
+    # Store the size of the images
+    dict_sizes = {}
     # Convert the PDF to PNG
     j = 0
     for i, fout in enumerate(ls_fout):
@@ -312,14 +314,17 @@ def read_tex(
             j = i
         img = images[i - j]
 
+        # Find where the question ends
+        whites = (255 - np.asarray(img)).sum(axis=2)
+        # Find the first row with non-white pixels
+        y1 = np.argmax(whites.sum(axis=1) > 0)
+        # Find the last row with non-white pixels
+        y2 = np.argmax(whites[::-1].sum(axis=1) > 0)
+        w, h = img.size
+        dict_sizes[fout] = h - y2 - y1
+
         if crop:
-            whites = (255 - np.asarray(img)).sum(axis=2)
-            # Find the first row with non-white pixels
-            y1 = np.argmax(whites.sum(axis=1) > 0)
-            # Find the last row with non-white pixels
-            y2 = np.argmax(whites[::-1].sum(axis=1) > 0)
             # Crop the image
-            w, h = img.size
             y2 = h - y2 + y1
             img = img.crop((0, 0, w, y2))
 
@@ -336,6 +341,12 @@ def read_tex(
 
         img.save(fout + ".png", "PNG")
         yield (i + 1) / len(ls_fout)
+
+    # Save dict_sizes as a CSV file
+    df_sizes = pd.DataFrame(dict_sizes.items(), columns=["Item", "Size"])
+    # Sort by size
+    df_sizes = df_sizes.sort_values("Size", ascending=True)
+    df_sizes.to_csv(out_folder + "/sizes.csv", index=False)
 
     # Remove auxiliary files
     for ext in ["aux", "log", "nav", "out", "snm", "tex", "toc"]:
