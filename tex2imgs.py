@@ -29,7 +29,7 @@ TXT_FULL = r"""
     \usepackage{xcolor}
     \usepackage{wrapfig}
     \setlength\parindent{0pt}
-    \linespread{1.25}
+    \linespread{1.1}
 
     \begin{document}
 
@@ -309,8 +309,9 @@ def read_tex(
             )
             j = i
         img = images[i - j]
-        whites = (255 - np.asarray(img)).sum(axis=2)
+
         if crop:
+            whites = (255 - np.asarray(img)).sum(axis=2)
             # Find the first row with non-white pixels
             y1 = np.argmax(whites.sum(axis=1) > 0)
             # Find the last row with non-white pixels
@@ -348,7 +349,7 @@ def main(
     output: str = "output",
     good: float = 1,
     bad: Optional[float] = None,
-    aspectratio: int = 169,
+    aspectratio: int = 1610,
     dpi: int = 200,
     crop: bool = False,
 ):
