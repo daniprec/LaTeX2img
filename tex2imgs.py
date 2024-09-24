@@ -11,6 +11,7 @@ import numpy as np
 import pandas as pd
 import typer
 from pdf2image import convert_from_path
+from PIL import ImageDraw, ImageFont
 
 TXT_FULL = r"""
     \documentclass[12pt, aspectratio=$ASPECT$]{beamer}
@@ -175,6 +176,7 @@ def read_tex(
     aspectratio: int = 169,
     dpi: int = 200,
     crop: bool = False,
+    show_size: bool = False,
 ):
     """
     Read a LaTeX file and extract the questions and choices.
@@ -320,6 +322,18 @@ def read_tex(
             w, h = img.size
             y2 = h - y2 + y1
             img = img.crop((0, 0, w, y2))
+
+        if show_size:
+            # Put the size in red at the bottom of the image
+            draw = ImageDraw.Draw(img)
+            font = ImageFont.truetype("arial.ttf", 30)
+            draw.text(
+                (0, 0),
+                f"{img.size[0]}x{img.size[1]}",
+                (255, 0, 0),
+                font=font,
+            )
+
         img.save(fout + ".png", "PNG")
         yield (i + 1) / len(ls_fout)
 
@@ -352,6 +366,7 @@ def main(
     aspectratio: int = 1610,
     dpi: int = 200,
     crop: bool = False,
+    show_size: bool = True,
 ):
     gen = read_tex(
         file,
@@ -361,6 +376,7 @@ def main(
         aspectratio=aspectratio,
         dpi=dpi,
         crop=crop,
+        show_size=show_size,
     )
     for p in gen:
         sys.stdout.write("\r%d%%" % (p * 100))
