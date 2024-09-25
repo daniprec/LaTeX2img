@@ -2,7 +2,7 @@ import os
 
 import streamlit as st
 
-from tex2imgs import read_tex
+from tex2imgs.utils import read_tex
 
 if "uploader_key" not in st.session_state:
     st.session_state.uploader_key = 0

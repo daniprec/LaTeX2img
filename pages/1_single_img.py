@@ -3,7 +3,7 @@ import shutil
 
 import streamlit as st
 
-from tex2imgs import read_tex
+from tex2imgs.utils import read_tex
 
 st.title("Single Question")
 # Text block where the user can input the LaTeX expression
