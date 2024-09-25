@@ -248,7 +248,6 @@ def read_tex(
         elif line.startswith("\\begin{multiplechoice}"):
             # Example: \begin{multiplechoice}[title={Algebra}, resetcounter=no]
             section = re.search(r"title={(.+?)}", line).group(1)
-            section = section.replace(" ", "_")
             question_index = 0  # Reset
             subsection = None  # Reset
         elif line.startswith("\\subsection{"):
