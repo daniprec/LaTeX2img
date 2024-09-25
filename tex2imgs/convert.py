@@ -238,6 +238,11 @@ def read_tex(
         line = line.strip()
         if line.startswith("%#original"):
             version_index = 0
+        if line.startswith("%topic="):
+            # Extract the topic as a subsection
+            # Warning: This conflicts with the subsections in the LaTeX file
+            subsection = line.split("=")[1]
+            question_index = 0  # Reset
         if line.startswith("%"):
             continue
         elif line.startswith("\\begin{multiplechoice}"):
@@ -248,7 +253,6 @@ def read_tex(
             subsection = None  # Reset
         elif line.startswith("\\subsection{"):
             subsection = re.search(r"subsection{(.+?)}", line).group(1)
-            subsection = subsection.replace(" ", "_")
             question_index = 0  # Reset
         elif line.startswith("\\begin{question}"):
             if version_index is None:
@@ -265,8 +269,12 @@ def read_tex(
             question_lines.append(line)
             fout = out_folder + "/"
             if section is not None:
+                # Remove spaces, underscores and commas
+                section = re.sub(r"[ _,]", "", section)
                 fout += f"{section}_"
             if subsection is not None:
+                # Remove spaces, underscores and commas
+                subsection = re.sub(r"[ _,]", "", subsection)
                 fout += f"{subsection}_"
             fout += f"Q{question_index:03d}"
             if version_index is not None:
