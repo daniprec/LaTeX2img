@@ -25,6 +25,19 @@ def remove_sizes(folder: str = "output"):
 
 
 def main(file: str = "examples/real.tex", config: str = "config.json"):
+    """
+    This script reads a tex file and generates images from it.
+    It uses a configuration file to set the parameters.
+    We try all different configurations of resolutions in the configuration file.
+    Then we save the five lowest and the five biggest questions.
+
+    Parameters
+    ----------
+    file : str, optional
+        _description_, by default "examples/real.tex"
+    config : str, optional
+        _description_, by default "config.json"
+    """
     dict_config = json.load(open(config))
     # Split the configuration into two: keys with dictionary values and keys with other values
     dict_subdicts = {
