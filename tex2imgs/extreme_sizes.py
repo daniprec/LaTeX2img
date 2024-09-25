@@ -4,7 +4,7 @@ import sys
 
 import pandas as pd
 import typer
-from convert import read_tex
+from utils import read_tex
 
 
 def remove_sizes(folder: str = "output"):
