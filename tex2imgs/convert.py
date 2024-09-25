@@ -328,7 +328,7 @@ def read_tex(
         # Find the last row with non-white pixels
         y2 = np.argmax(whites[::-1].sum(axis=1) > 0)
         w, h = img.size
-        dict_sizes[fout] = h - y2 - y1
+        dict_sizes[fout.split("/")[-1]] = h - y2 - y1
 
         if crop:
             # Crop the image
@@ -380,7 +380,7 @@ def main(
     file: str = "examples/real.tex",
     output: str = "output",
     config: str = "config.json",
-    key: str = "1610",
+    key: str = "169",
 ):
     dict_config = json.load(open(config))
 
