@@ -1,0 +1,26 @@
+{
+"score_good": 1,
+"score_bad": 0,
+"show_size": true,
+"43": {
+    "aspectratio": 43,
+    "fontsize": 12,
+    "linespread": 1.0,
+    "dpi": 200,
+    "crop": false
+    },
+"169": {
+    "aspectratio": 169,
+    "fontsize": 12,
+    "linespread": 1.0,
+    "dpi": 200,
+    "crop": false
+    },
+"1610": {
+    "aspectratio": 1610,
+    "fontsize": 12,
+    "linespread": 1.1,
+    "dpi": 200,
+    "crop": false
+    }
+}

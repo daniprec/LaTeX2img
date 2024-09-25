@@ -1,3 +1,4 @@
+import json
 import os
 import re
 import subprocess
@@ -14,7 +15,7 @@ from pdf2image import convert_from_path
 from PIL import ImageDraw, ImageFont
 
 TXT_FULL = r"""
-    \documentclass[12pt, aspectratio=$ASPECT$]{beamer}
+    \documentclass[$FONTSIZE$pt, aspectratio=$ASPECT$]{beamer}
     \setbeamertemplate{navigation symbols}{}
     \usepackage{amsmath}
     \usepackage{amssymb}
@@ -30,7 +31,7 @@ TXT_FULL = r"""
     \usepackage{xcolor}
     \usepackage{wrapfig}
     \setlength\parindent{0pt}
-    \linespread{1.1}
+    \linespread{$LINESPREAD$}
 
     \begin{document}
 
@@ -174,6 +175,8 @@ def read_tex(
     score_bad: Optional[float] = None,
     batch_size: int = 50,
     aspectratio: int = 169,
+    fontsize: int = 12,
+    linespread: float = 1.1,
     dpi: int = 200,
     crop: bool = False,
     show_size: bool = False,
@@ -197,6 +200,8 @@ def read_tex(
         As of the 2022, arbitrary aspect ratios are available.
         Two-digit numbers will be interpreted as X:Y,
         three-digit numbers as XX:Y and four digit as XX:YY.
+    fontsize : int, optional
+        Font size for the images, default is 12.
     dpi : int, optional
         Dots per inch for the images, default is 200.
     crop : bool, optional
@@ -204,6 +209,8 @@ def read_tex(
     """
     # Insert the line in the preamble (third line)
     txt_full = TXT_FULL.replace("$ASPECT$", str(aspectratio), 1)
+    txt_full = txt_full.replace("$FONTSIZE$", str(fontsize), 1)
+    txt_full = txt_full.replace("$LINESPREAD$", str(linespread), 1)
 
     if path_output.endswith(".zip"):
         out_folder = path_output[:-4]
@@ -370,25 +377,22 @@ def read_tex(
 
 
 def main(
-    file: str = "examples/test.tex",
+    file: str = "examples/real.tex",
     output: str = "output",
-    good: float = 1,
-    bad: Optional[float] = None,
-    aspectratio: int = 1610,
-    dpi: int = 200,
-    crop: bool = False,
-    show_size: bool = True,
+    config: str = "config.json",
+    key: str = "1610",
 ):
+    dict_config = json.load(open(config))
+
     gen = read_tex(
         file,
         output,
-        score_good=good,
-        score_bad=bad,
-        aspectratio=aspectratio,
-        dpi=dpi,
-        crop=crop,
-        show_size=show_size,
+        score_good=dict_config["score_good"],
+        score_bad=dict_config["score_bad"],
+        show_size=dict_config["show_size"],
+        **dict_config[key],
     )
+
     for p in gen:
         sys.stdout.write("\r%d%%" % (p * 100))
         sys.stdout.flush()
