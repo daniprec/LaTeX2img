@@ -43,9 +43,11 @@ def main(file: str = "examples/real.tex", config: str = "config.json"):
             **subdict,
         )
 
-    for p in gen:
-        sys.stdout.write("\r%d%%" % (p * 100))
-        sys.stdout.flush()
+        for p in gen:
+            sys.stdout.write("\r%d%%" % (p * 100))
+            sys.stdout.flush()
+
+        remove_sizes(output)
 
 
 if __name__ == "__main__":
