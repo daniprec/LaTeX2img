@@ -2,6 +2,13 @@
 "score_good": 1,
 "score_bad": 0,
 "show_size": true,
+"21": {
+    "aspectratio": 21,
+    "fontsize": 12,
+    "linespread": 1.0,
+    "dpi": 200,
+    "crop": false
+    },
 "43": {
     "aspectratio": 43,
     "fontsize": 12,
