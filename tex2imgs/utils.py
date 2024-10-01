@@ -15,7 +15,7 @@ from pdf2image import convert_from_path
 from PIL import ImageDraw, ImageFont
 
 TXT_FULL = r"""
-    \documentclass[$FONTSIZE$pt, aspectratio=$ASPECT$]{beamer}
+    \documentclass[$FONTSIZE$pt, aspectratio=$ASPECT$, fleqn]{beamer}
     \setbeamertemplate{navigation symbols}{}
     \usepackage{amsmath}
     \usepackage{amssymb}
