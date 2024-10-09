@@ -61,7 +61,7 @@ def process_question(
         Score for the wrong answers.
         If None, it will be set to -score_good / number_of_choices.
     score_noanswer : float, optional
-        Score for not answering the question.
+        Score for not answering the question. This is added as a last option.
     """
     fout_question = Path(fout + ".png")
     dict_question = {"Item": fout_question.stem}
@@ -132,7 +132,7 @@ def read_tex(
         Score for the wrong answers.
         If None, it will be set to -score_good / number_of_choices.
     score_noanswer : float, optional
-        Score for not answering the question.
+        Score for not answering the question. This is added as a last option.
     aspectratio : int, optional
         Aspect ratio for the images, default is 169.
         As of the 2022, arbitrary aspect ratios are available.
