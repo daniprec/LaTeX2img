@@ -5,9 +5,8 @@ import subprocess
 import sys
 import zipfile
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Dict, List, Optional, Union
 
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import typer
@@ -36,76 +35,6 @@ TXT_FULL = r"""
     \begin{document}
 
     """
-
-
-# Deprecated function:use the pdf2image library instead
-def latex2image(
-    latex_expression: str,
-    image_name: str,
-    image_size_px: Tuple[int, int] = (1000, 200),
-    fontsize: int = 16,
-    dpi: int = 200,
-):
-    """
-    A simple function to generate an image from a LaTeX language string.
-    Source: https://medium.com/@ealbanez/how-to-easily-convert-latex-to-images-with-python-9062184dc815
-
-    Parameters
-    ----------
-    latex_expression : str
-        Equation in LaTeX markup language.
-    image_name : str or path-like
-        Full path or filename including filetype.
-        Accepeted filetypes include: png, pdf, ps, eps and svg.
-    image_size_in : tuple of float, optional
-        Image size. Tuple which elements, in inches, are: (width_in, vertical_in).
-    fontsize : float or str, optional
-        Font size, that can be expressed as float or
-        {'xx-small', 'x-small', 'small', 'medium', 'large', 'x-large', 'xx-large'}.
-    """
-    image_size_in = (image_size_px[0] / dpi, image_size_px[1] / dpi)
-
-    fig = plt.figure(figsize=image_size_in, dpi=dpi)
-    # Runtime Configuration Parameters
-    plt.rc("text", usetex=True)
-    plt.rc("font", family="cmu-serif")
-    w = str(image_size_in[0] * 0.9)
-    preamble = r"""
-        \usepackage{amsmath}
-        \usepackage{amssymb}
-        \usepackage{caption}
-        \usepackage{subcaption}
-        \usepackage{graphicx}
-        \usepackage{mathtools}
-        \usepackage{pgfplots}
-        \usepackage{pifont}
-        \usepackage{tikz}
-        \usepackage{tkz-euclide}
-        \usetikzlibrary{calc}
-        \usepackage{xcolor}
-        \usepackage{wrapfig}
-        \setlength\parindent{0pt}
-        \setlength\textwidth{$in}
-        \linespread{1.5}
-        """.replace("$", w)
-    plt.rc("text.latex", preamble=preamble)
-
-    text = fig.text(
-        x=0.05,
-        y=0.5,
-        s=latex_expression,
-        horizontalalignment="left",
-        verticalalignment="center",
-        fontsize=fontsize,
-    )
-    renderer = fig.canvas.get_renderer()
-    bbox = text.get_window_extent(renderer=renderer)
-    fig.set_size_inches(image_size_in[0], bbox.height / dpi + 0.2)
-    # Check if the text overflows the image
-    if bbox.width > image_size_px[0]:
-        raise ValueError(f"The text overflows the image width:\n{latex_expression}")
-    plt.savefig(image_name)
-    plt.close()
 
 
 def process_question(
