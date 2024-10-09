@@ -87,9 +87,7 @@ def latex2image(
         \setlength\parindent{0pt}
         \setlength\textwidth{$in}
         \linespread{1.5}
-        """.replace(
-        "$", w
-    )
+        """.replace("$", w)
     plt.rc("text.latex", preamble=preamble)
 
     text = fig.text(
@@ -115,6 +113,7 @@ def process_question(
     fout: str,
     score_good: float = 1,
     score_bad: Optional[float] = None,
+    score_noanswer: Optional[float] = None,
 ) -> Dict:
     """
     Process a question and its choices.
@@ -132,6 +131,8 @@ def process_question(
     score_bad : float, optional
         Score for the wrong answers.
         If None, it will be set to -score_good / number_of_choices.
+    score_noanswer : float, optional
+        Score for not answering the question.
     """
     fout_question = Path(fout + ".png")
     dict_question = {"Item": fout_question.stem}
@@ -165,6 +166,11 @@ def process_question(
     for k, v in dict_question.items():
         if v is None:
             dict_question[k] = score_bad
+    # Add a last option of no-answer
+    # Keys were uppercase letters, use the next one
+    if score_noanswer is not None:
+        k = f"Score for answer {len(dict_question)}"
+        dict_question[k] = score_noanswer
     return txt, dict_question
 
 
@@ -173,6 +179,7 @@ def read_tex(
     path_output: str,
     score_good: float = 1,
     score_bad: Optional[float] = None,
+    score_noanswer: Optional[float] = None,
     batch_size: int = 50,
     aspectratio: int = 169,
     fontsize: int = 12,
@@ -195,6 +202,8 @@ def read_tex(
     score_bad : float, optional
         Score for the wrong answers.
         If None, it will be set to -score_good / number_of_choices.
+    score_noanswer : float, optional
+        Score for not answering the question.
     aspectratio : int, optional
         Aspect ratio for the images, default is 169.
         As of the 2022, arbitrary aspect ratios are available.
@@ -284,6 +293,7 @@ def read_tex(
                     fout,
                     score_good=score_good,
                     score_bad=score_bad,
+                    score_noanswer=score_noanswer,
                 )
                 ls_dict_questions.append(dict_question)
                 txt_full += txt
@@ -396,6 +406,7 @@ def main(
         output,
         score_good=dict_config["score_good"],
         score_bad=dict_config["score_bad"],
+        score_noanswer=dict_config["score_noanswer"],
         show_size=dict_config["show_size"],
         **dict_config[key],
     )

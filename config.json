@@ -1,7 +1,8 @@
 {
 "score_good": 1,
-"score_bad": 0,
-"show_size": true,
+"score_bad": null,
+"score_noanswer": 0,
+"show_size": false,
 "21": {
     "aspectratio": 21,
     "fontsize": 12,
