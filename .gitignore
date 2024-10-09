@@ -165,5 +165,8 @@ cython_debug/
 *.tex
 *.png
 
-# Custom folders
+# Custom folders and files
 .vscode/
+cover.pdf
+questions.csv
+sizes.csv
