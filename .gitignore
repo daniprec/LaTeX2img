@@ -169,4 +169,5 @@ cython_debug/
 .vscode/
 cover.pdf
 questions.csv
+questions_*.csv
 sizes.csv
