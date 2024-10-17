@@ -253,6 +253,13 @@ def read_tex(
 
     # Turn the list of dictionaries into a DataFrame
     df = pd.DataFrame(ls_dict_questions)
+    # Split into sub-dataframes by section
+    df["Section"] = df["Item"].apply(lambda x: x.split("_")[0])
+    for section in df["Section"].unique():
+        df_section = df[df["Section"] == section]
+        df_section = df_section.drop(columns=["Section"])
+        df_section.to_csv(out_folder + f"/questions_{section}.csv", index=False)
+    df = df.drop(columns=["Section"])
     df.to_csv(out_folder + "/questions.csv", index=False)
 
     # Store the size of the images
