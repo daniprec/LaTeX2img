@@ -5,7 +5,27 @@ import streamlit as st
 
 from tex2imgs.utils import read_tex
 
-st.title("Single Question")
+
+st.set_page_config(page_title="Single Question Preview", page_icon="logo.png")
+
+
+st.title("Single Question Preview")
+st.write(
+    "Render one multiple-choice LaTeX question as an image before preparing a "
+    "larger question file."
+)
+
+with st.expander("How the preview works", expanded=True):
+    st.markdown(
+        """
+1. Paste a question using the same LaTeX choice format used by the batch
+   converter.
+2. Select the image aspect ratio and DPI.
+3. The preview refreshes with the rendered question, so you can check spacing,
+   mathematical notation, and answer choices before scaling up.
+"""
+    )
+
 # Text block where the user can input the LaTeX expression
 latex_expression = st.text_area(
     "Please input a question with choices in LaTeX format:",
