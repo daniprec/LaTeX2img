@@ -1,0 +1,11 @@
+NO OF FIELDS ,,,,,,,,,
+SET NAME     ,,,,,,,,Problem_Set_1,Problem_Set_2,Problem_Set_3
+PROB NUMBER  ,,,,,,,,,
+CLOSE DATE   ,,,,,,,,,
+CLOSE TIME   ,,,,,,,,,
+PROB VALUE   ,,,,,,,,10,20,15
+STUDENT ID   ,login ID     ,LAST NAME,FIRST NAME,SECTION,RECITATION,total,total,summary,%score,Problem_Set_1,Problem_Set_2,Problem_Set_3
+1,john.smith,SMITH,JOHN,,,10,18,28,93,100,90,88
+2,jane.doe,DOE,JANE,,,9,20,29,97,95,100,92
+3,ana.garcia,GARCIA,ANA,,,8,15,23,77,80,75,70
+4,chris.lee,LEE,CHRIS,,,9,16,25,83,90,80,85
