@@ -11,7 +11,7 @@ Cloud version:
 
 ## Available Tools
 
-### LaTeX to Images
+### Batch LaTeX to Images
 
 Upload a `.tex` file containing multiple-choice questions and download a ZIP
 file with the rendered images. This is useful when a quiz, exam, or learning
@@ -20,7 +20,7 @@ platform needs mathematical content as image files rather than raw LaTeX.
 Basic process:
 
 1. Prepare a `.tex` file with questions and `\choice{...}` answers.
-2. Upload the file in the LaTeX to Images page.
+2. Upload the file in the Batch LaTeX to Images page.
 3. Wait for the progress bar to complete.
 4. Download the generated ZIP file.
 
@@ -30,7 +30,7 @@ Paste one LaTeX multiple-choice question and preview the rendered image. Use
 this before preparing a full file, especially when checking spacing, notation,
 aspect ratio, or DPI.
 
-### WebWork to Blackboard
+### WebWork to Blackboard Gradebook
 
 Merge WebWork project scores into a Blackboard gradebook CSV. Blackboard stays
 as the base table: all original Blackboard columns are preserved, and the tool
@@ -40,7 +40,7 @@ Basic process:
 
 1. Export the gradebook CSV from Blackboard.
 2. Export the totals CSV from WebWork.
-3. Open the WebWork to Blackboard page.
+3. Open the WebWork to Blackboard Gradebook page.
 4. Optionally download the sample CSVs from the page to test the workflow.
 5. Upload the Blackboard CSV and the WebWork CSV.
 6. Leave key columns on automatic detection unless your exports use unusual
@@ -107,9 +107,9 @@ http://localhost:8501
 
 ```text
 streamlit_app.py                     Front page for the BAM tools site
-pages/1_latex_to_images.py           Batch LaTeX image converter
-pages/1_single_img.py                Single-question preview tool
-pages/2_webwork_blackboard_converter.py
+pages/1_Batch_LaTeX_to_Images.py     Batch LaTeX image converter
+pages/2_Single_Question_Preview.py   Single-question preview tool
+pages/3_WebWork_to_Blackboard_Gradebook.py
                                      WebWork to Blackboard CSV converter
 tex2imgs/                            Shared conversion logic
 examples/                            Sample CSV and LaTeX files

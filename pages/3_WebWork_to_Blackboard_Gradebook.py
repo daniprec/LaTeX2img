@@ -10,7 +10,7 @@ from tex2imgs.webwork_to_blackboard import (
     rows_to_csv_bytes,
 )
 
-st.set_page_config(page_title="WebWork to Blackboard", page_icon="logo.png")
+st.set_page_config(page_title="WebWork to Blackboard Gradebook", page_icon="logo.png")
 
 
 RESULT_KEY = "webwork_blackboard_conversion"
@@ -94,7 +94,7 @@ def format_code_list(codes):
     return ", ".join(f"`{code}`" for code in codes)
 
 
-st.title("WebWork to Blackboard")
+st.title("WebWork to Blackboard Gradebook")
 st.write(
     "Append WebWork project scores to a Blackboard gradebook without changing "
     "the original Blackboard columns."

@@ -5,14 +5,14 @@ import streamlit as st
 from tex2imgs.utils import read_tex
 
 
-st.set_page_config(page_title="LaTeX to Images", page_icon="logo.png")
+st.set_page_config(page_title="Batch LaTeX to Images", page_icon="logo.png")
 
 
 if "uploader_key" not in st.session_state:
     st.session_state.uploader_key = 0
 
 
-st.title("LaTeX to Images")
+st.title("Batch LaTeX to Images")
 st.write(
     "Convert a LaTeX file with multiple-choice questions into a ZIP file of "
     "images ready for use in teaching material, quizzes, or exams."

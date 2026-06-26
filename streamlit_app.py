@@ -91,7 +91,7 @@ with col1:
     st.markdown(
         """
 <div class="tool-panel">
-  <h3>LaTeX to Images</h3>
+  <h3>Batch LaTeX to Images</h3>
   <p>Upload a complete LaTeX question file and download rendered image assets
   packaged in a ZIP file.</p>
 </div>
@@ -115,7 +115,7 @@ with col3:
     st.markdown(
         """
 <div class="tool-panel">
-  <h3>WebWork to Blackboard</h3>
+  <h3>WebWork to Blackboard Gradebook</h3>
   <p>Merge WebWork project scores into a Blackboard gradebook CSV and download
   the updated file.</p>
 </div>
