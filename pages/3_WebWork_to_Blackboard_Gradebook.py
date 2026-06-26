@@ -223,9 +223,11 @@ if st.button("Convert CSV", type="primary", disabled=not can_convert):
             "matched": result.matched,
             "unmatched": result.unmatched,
             "appended_columns": result.appended_columns,
-            "overwritten_headers": result.overwritten_headers,
-            "unmatched_blackboard_keys": result.unmatched_blackboard_keys,
-            "unmatched_webwork_keys": result.unmatched_webwork_keys,
+            "overwritten_headers": getattr(result, "overwritten_headers", []),
+            "unmatched_blackboard_keys": getattr(
+                result, "unmatched_blackboard_keys", []
+            ),
+            "unmatched_webwork_keys": getattr(result, "unmatched_webwork_keys", []),
             "blackboard_key": result.blackboard_key,
             "webwork_key": result.webwork_key,
             "rows": result.rows,
