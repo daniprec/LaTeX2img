@@ -10,6 +10,8 @@ from tex2imgs.webwork_to_blackboard import (
     rows_to_csv_bytes,
 )
 
+st.set_page_config(page_title="WebWork to Blackboard", page_icon="logo.png")
+
 
 RESULT_KEY = "webwork_blackboard_conversion"
 SIGNATURE_KEY = "webwork_blackboard_signature"
@@ -52,7 +54,9 @@ def preview_table(rows, limit=10):
     if not preview_rows:
         return ""
 
-    header_cells = "".join(f"<th>{html.escape(str(cell or ''))}</th>" for cell in header)
+    header_cells = "".join(
+        f"<th>{html.escape(str(cell or ''))}</th>" for cell in header
+    )
     body_rows = []
     for row in preview_rows:
         cells = "".join(f"<td>{html.escape(str(cell or ''))}</td>" for cell in row)
@@ -65,7 +69,7 @@ def preview_table(rows, limit=10):
       <tr>{header_cells}</tr>
     </thead>
     <tbody>
-      {''.join(body_rows)}
+      {"".join(body_rows)}
     </tbody>
   </table>
 </div>
@@ -84,10 +88,55 @@ def preview_table(rows, limit=10):
 """
 
 
+def format_code_list(codes):
+    if not codes:
+        return "None"
+    return ", ".join(f"`{code}`" for code in codes)
+
+
 st.title("WebWork to Blackboard")
-st.write("Upload a Blackboard gradebook CSV and a WebWork totals CSV.")
+st.write(
+    "Append WebWork project scores to a Blackboard gradebook without changing "
+    "the original Blackboard columns."
+)
+
+with st.expander("How the conversion works", expanded=True):
+    st.markdown(
+        """
+1. Download the gradebook CSV from Blackboard. This is the base file: every
+   original Blackboard column is kept in the same order.
+2. Download the totals CSV from WebWork. The tool looks for the WebWork header
+   row and reads the project columns, such as `Problem_Set_1`.
+3. Upload both files below. In most cases the key columns are detected
+   automatically as the Blackboard email or username column and the WebWork
+   login/email column.
+4. If your exports use different names, choose the Blackboard key column and
+   type the WebWork key column manually.
+5. Convert and download the new CSV. The output adds one column per WebWork
+   project and leaves unmatched Blackboard students blank.
+"""
+    )
+
+with st.expander("How to download and upload Blackboard gradebooks"):
+    st.markdown(
+        """
+To download the gradebook from Blackboard, go to your course, open
+**Gradebook**, and find the top-right row of icons. The rightmost icon is a
+configuration wheel. Next to it, click **Download Gradebook**, which looks like
+a box with an arrow pointing down. Select **Full Gradebook**, **All Items**,
+and **CSV** as the file type. Then click **Download**.
+
+To upload the updated Blackboard file, follow a similar path but click
+**Upload Gradebook**, the box with an arrow pointing up.
+"""
+    )
 
 st.subheader("Sample files")
+st.write(
+    "Use these files to test the workflow before using a real gradebook. The "
+    "expected output shows the Blackboard sample after the WebWork scores are "
+    "appended."
+)
 sample_cols = st.columns(len(SAMPLE_FILES))
 for col, (label, filename, download_name) in zip(sample_cols, SAMPLE_FILES):
     sample_path = EXAMPLES_DIR / filename
@@ -174,6 +223,9 @@ if st.button("Convert CSV", type="primary", disabled=not can_convert):
             "matched": result.matched,
             "unmatched": result.unmatched,
             "appended_columns": result.appended_columns,
+            "overwritten_headers": result.overwritten_headers,
+            "unmatched_blackboard_keys": result.unmatched_blackboard_keys,
+            "unmatched_webwork_keys": result.unmatched_webwork_keys,
             "blackboard_key": result.blackboard_key,
             "webwork_key": result.webwork_key,
             "rows": result.rows,
@@ -186,7 +238,7 @@ conversion = st.session_state.get(RESULT_KEY)
 if conversion:
     st.success(
         "Added "
-        f"{conversion['appended_columns']} WebWork columns. "
+        f"{conversion['appended_columns']} new WebWork columns. "
         f"Matched {conversion['matched']} Blackboard rows; "
         f"{conversion['unmatched']} unmatched."
     )
@@ -194,6 +246,29 @@ if conversion:
         f"Matched with Blackboard `{conversion['blackboard_key']}` "
         f"and WebWork `{conversion['webwork_key']}`."
     )
+
+    overwritten_headers = conversion.get("overwritten_headers", [])
+    if overwritten_headers:
+        st.error(
+            "The following Blackboard columns were overwritten with WebWork "
+            "values, taking the last matching value from WebWork: "
+            f"{format_code_list(overwritten_headers)}."
+        )
+
+    unmatched_blackboard = conversion.get("unmatched_blackboard_keys", [])
+    if unmatched_blackboard:
+        st.error(
+            "These Blackboard codes did not match any WebWork row: "
+            f"{format_code_list(unmatched_blackboard)}."
+        )
+
+    unmatched_webwork = conversion.get("unmatched_webwork_keys", [])
+    if unmatched_webwork:
+        st.error(
+            "These WebWork codes did not match any Blackboard row: "
+            f"{format_code_list(unmatched_webwork)}."
+        )
+
     st.download_button(
         "Download Blackboard CSV",
         data=conversion["data"],

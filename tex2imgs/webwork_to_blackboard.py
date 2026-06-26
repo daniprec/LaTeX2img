@@ -59,6 +59,18 @@ def first_header_row(rows: Sequence[Sequence[str]], required: Iterable[str]) -> 
     raise ValueError(f"Could not find a header row containing: {', '.join(required)}")
 
 
+def first_available_header_row(
+    rows: Sequence[Sequence[str]], required_groups: Sequence[Sequence[str]]
+) -> int:
+    for required in required_groups:
+        try:
+            return first_header_row(rows, required)
+        except ValueError:
+            continue
+    required = sorted({item for group in required_groups for item in group})
+    raise ValueError(f"Could not find a header row containing one of: {', '.join(required)}")
+
+
 def local_part(value: str) -> str:
     value = clean(value)
     if "@" in value:
@@ -102,8 +114,23 @@ class ConversionResult:
     unmatched: int
     appended_columns: int
     appended_headers: List[str]
+    overwritten_headers: List[str]
+    unmatched_blackboard_keys: List[str]
+    unmatched_webwork_keys: List[str]
     blackboard_key: str
     webwork_key: str
+
+
+@dataclass
+class ColumnAction:
+    value_idx: int
+    output_idx: int
+    header: str
+    overwrites_existing: bool
+
+
+BLACKBOARD_KEY_COLUMNS = ["email", "e-mail", "username", "user id", "login id", "login"]
+WEBWORK_KEY_COLUMNS = ["email", "e-mail", "login id", "login", "username", "user id"]
 
 
 def find_column(header: Sequence[str], key_column: str) -> int:
@@ -115,10 +142,21 @@ def find_column(header: Sequence[str], key_column: str) -> int:
     raise ValueError(f"Column not found: {key_column}")
 
 
+def find_preferred_column(header: Sequence[str], preferred: Sequence[str]) -> Optional[int]:
+    header_norm = [norm(cell) for cell in header]
+    for candidate in preferred:
+        for i, cell in enumerate(header_norm):
+            if candidate == cell or candidate in cell:
+                return i
+    return None
+
+
 def detect_webwork(
     rows: List[List[str]], key_column: Optional[str] = None
 ) -> WebWorkExport:
-    header_idx = first_header_row(rows, ["login id", "student id"])
+    header_idx = first_available_header_row(
+        rows, [["email"], ["e-mail"], ["login id"], ["username"], ["user id"]]
+    )
     header = [clean(c) for c in rows[header_idx]]
     header_norm = [norm(c) for c in header]
 
@@ -128,15 +166,7 @@ def detect_webwork(
         except ValueError as exc:
             raise ValueError(f"WebWork key column not found: {key_column}") from exc
     else:
-        candidates = ["login id", "login id ", "login", "loginid"]
-        key_idx = next(
-            (
-                i
-                for i, cell in enumerate(header_norm)
-                if any(c == cell or c in cell for c in candidates)
-            ),
-            None,
-        )
+        key_idx = find_preferred_column(header, WEBWORK_KEY_COLUMNS)
         if key_idx is None:
             raise ValueError("Could not detect the WebWork key column.")
 
@@ -188,7 +218,6 @@ def detect_blackboard(
     if not rows:
         raise ValueError("Blackboard file is empty.")
     header = [clean(c) for c in rows[0]]
-    header_norm = [norm(c) for c in header]
 
     if key_column is not None:
         try:
@@ -196,15 +225,7 @@ def detect_blackboard(
         except ValueError as exc:
             raise ValueError(f"Blackboard key column not found: {key_column}") from exc
     else:
-        preferred = ["username", "user id", "login id", "login", "email"]
-        key_idx = next(
-            (
-                i
-                for i, cell in enumerate(header_norm)
-                if any(p == cell or p in cell for p in preferred)
-            ),
-            None,
-        )
+        key_idx = find_preferred_column(header, BLACKBOARD_KEY_COLUMNS)
         if key_idx is None:
             raise ValueError("Could not detect the Blackboard key column.")
 
@@ -215,9 +236,12 @@ def detect_blackboard(
     return BlackboardExport(header=header, key_idx=key_idx, rows=out_rows)
 
 
-def build_lookup(webwork: WebWorkExport) -> Dict[str, List[str]]:
-    lookup: Dict[str, List[str]] = {}
-    for row in webwork.rows:
+def build_indexed_lookup(
+    webwork: WebWorkExport,
+) -> Tuple[Dict[str, Tuple[List[str], int]], Dict[str, List[int]]]:
+    lookup: Dict[str, Tuple[List[str], int]] = {}
+    variant_records: Dict[str, List[int]] = {}
+    for row_idx, row in enumerate(webwork.rows):
         if len(row) <= webwork.key_idx:
             continue
         key = row[webwork.key_idx]
@@ -225,8 +249,24 @@ def build_lookup(webwork: WebWorkExport) -> Dict[str, List[str]]:
             continue
         values = [row[i] if i < len(row) else "" for i in webwork.project_indices]
         for variant in key_variants(key):
-            lookup[variant] = values
-    return lookup
+            lookup[variant] = (values, row_idx)
+            variant_records.setdefault(variant, []).append(row_idx)
+    return lookup, variant_records
+
+
+def unique_values(values: Iterable[str]) -> List[str]:
+    seen = set()
+    unique = []
+    for value in values:
+        cleaned = clean(value)
+        if not cleaned:
+            continue
+        normalized = norm(cleaned)
+        if normalized in seen:
+            continue
+        seen.add(normalized)
+        unique.append(cleaned)
+    return unique
 
 
 def convert_rows(
@@ -237,48 +277,93 @@ def convert_rows(
 ) -> ConversionResult:
     bb = detect_blackboard(blackboard_rows, blackboard_key)
     ww = detect_webwork(webwork_rows, webwork_key)
-    lookup = build_lookup(ww)
+    lookup, variant_records = build_indexed_lookup(ww)
 
-    appended_headers = []
-    used_names = {norm(h) for h in bb.header}
-    for name in ww.project_names:
+    out_header = list(bb.header)
+    appended_headers: List[str] = []
+    overwritten_headers: List[str] = []
+    column_actions: List[ColumnAction] = []
+    used_names = {norm(h) for h in out_header}
+    existing_names = {
+        norm(header): idx for idx, header in enumerate(bb.header) if idx != bb.key_idx
+    }
+
+    for value_idx, name in enumerate(ww.project_names):
         candidate = clean(name) or "Project"
+        existing_idx = existing_names.get(norm(candidate))
+        if existing_idx is not None:
+            header = out_header[existing_idx]
+            overwritten_headers.append(header)
+            column_actions.append(
+                ColumnAction(
+                    value_idx=value_idx,
+                    output_idx=existing_idx,
+                    header=header,
+                    overwrites_existing=True,
+                )
+            )
+            continue
+
         base = candidate
         suffix = 2
         while norm(candidate) in used_names:
             candidate = f"{base} ({suffix})"
             suffix += 1
         used_names.add(norm(candidate))
+        output_idx = len(out_header)
+        out_header.append(candidate)
         appended_headers.append(candidate)
+        column_actions.append(
+            ColumnAction(
+                value_idx=value_idx,
+                output_idx=output_idx,
+                header=candidate,
+                overwrites_existing=False,
+            )
+        )
 
-    out_rows: List[List[str]] = [bb.header + appended_headers]
+    out_rows: List[List[str]] = [out_header]
     matched = 0
     unmatched = 0
+    matched_webwork_rows = set()
+    unmatched_blackboard_keys: List[str] = []
 
     for row in bb.rows[1:]:
         out = list(row)
-        while len(out) < len(bb.header):
+        while len(out) < len(out_header):
             out.append("")
         key_value = out[bb.key_idx] if bb.key_idx < len(out) else ""
         values = None
         for variant in key_variants(key_value):
             if variant in lookup:
-                values = lookup[variant]
+                values, row_idx = lookup[variant]
+                matched_webwork_rows.add(row_idx)
+                matched_webwork_rows.update(variant_records.get(variant, []))
                 break
         if values is None:
             unmatched += 1
-            values = [""] * len(ww.project_indices)
+            unmatched_blackboard_keys.append(clean(key_value))
         else:
             matched += 1
-        out.extend(values)
+            for action in column_actions:
+                out[action.output_idx] = values[action.value_idx]
         out_rows.append(out)
+
+    unmatched_webwork_keys = []
+    for row_idx, row in enumerate(ww.rows):
+        if row_idx in matched_webwork_rows or len(row) <= ww.key_idx:
+            continue
+        unmatched_webwork_keys.append(row[ww.key_idx])
 
     return ConversionResult(
         rows=out_rows,
         matched=matched,
         unmatched=unmatched,
-        appended_columns=len(ww.project_indices),
+        appended_columns=len(appended_headers),
         appended_headers=appended_headers,
+        overwritten_headers=unique_values(overwritten_headers),
+        unmatched_blackboard_keys=unique_values(unmatched_blackboard_keys),
+        unmatched_webwork_keys=unique_values(unmatched_webwork_keys),
         blackboard_key=bb.header[bb.key_idx],
         webwork_key=ww.header[ww.key_idx],
     )
